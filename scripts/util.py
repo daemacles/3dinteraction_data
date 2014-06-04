@@ -156,7 +156,7 @@ def getScenes (criteria = None):
     db.close()
     return scenes
 
-def plotScene (scene, *args, **kwargs):
+def plotScene (scene, useColor=False, *args, **kwargs):
     i = scene['inputs']
     pos = i[:,1:4]
 
@@ -171,10 +171,13 @@ def plotScene (scene, *args, **kwargs):
     X = points[:,0]
     Y = points[:,1]
     Z = points[:,2]
-    S = [1,0.5] * (len(X) / 2 + 1)
-    if len(S) > len(X):
-        S = S[:len(X)]
-    plot3d(X,Y,Z,S, *args, **kwargs)
+    if useColor:
+        S = [1,0.5] * (len(X) / 2 + 1)
+        if len(S) > len(X):
+            S = S[:len(X)]
+        plot3d(X,Y,Z,S, *args, **kwargs)
+    else:
+        plot3d(X,Y,Z, *args, **kwargs)
     points3d(X,Y,Z, scale_factor=0.1, resolution=4)
 
 def cylinderCompress(scene):
@@ -191,9 +194,3 @@ def cylinderCompress(scene):
         rotM = RotAA_to_M(-1 * sign * theta * i_axis)
         P[idx] = rotM.dot(p)
     
-if __name__ == "__main__":
-    pass
-    #populateDB()
-
-    # show()
-
