@@ -126,29 +126,47 @@ def parseTrial(filename):
             inputs[row, 1:4] = rotM.dot((pos - T).reshape(3,1)).reshape(3)
         s['inputs'] = inputs
     return metadata
-        
-if __name__ == "__main__":
+
+def populateDB():
     files = [f for f in os.listdir('.') if '.json' in f]
     createDB()
-    for f in files:
+    count = 0
+    for f in sorted(files):
         print 'Parsing', f
         metadata = parseTrial(f)
         addToDB(metadata)
-    
+    return
 
-    # for s in metadata['scenes']:
-    #     i = s['inputs']
-    #     pos = i[:,1:4]
-    #     points = [pos[0]]
-    #     for idx in xrange(1,pos.shape[0]):
-    #         v = pos[idx] - pos[idx-1]
-    #         if v.dot(v) > 0.0001:
-    #             points.append(pos[idx])
-    #     points = np.array(points)
-    #     X = points[:,0]
-    #     Y = points[:,1]
-    #     Z = points[:,2]
-    #     plot3d(X,Y,Z)
-    #     points3d(X,Y,Z, scale_factor=0.2)
-    # show()
+def sceneFromRecord (record):
+    fields = ('id', 'subject', 'input', 'output', 'startTime', 'endTime',
+              'duration', 'numInputs', 'startPos', 'endPos', 'inputs')
+    scene = dict(zip(fields, record))
+    scene['startPos'] = np.frombuffer(scene['startPos'], dtype=np.float32)
+    scene['endPos'] = np.frombuffer(scene['endPos'], dtype=np.float32)
+    scene['inputs'] = np.frombuffer(scene['inputs'], dtype=np.float32).reshape(scene['numInputs'], 9)
+    return scene
+
+def plotScene (scene):
+    i = scene['inputs']
+    pos = i[:,1:4]
+
+    # VTK won't render coincident points, so we have to get rid of overlaps
+    points = [pos[0]]
+    for idx in xrange(1,pos.shape[0]):
+        v = pos[idx] - pos[idx-1]
+        if v.dot(v) > 0.0001:
+            points.append(pos[idx])
+    points = np.array(points)
     
+    X = points[:,0]
+    Y = points[:,1]
+    Z = points[:,2]
+    plot3d(X,Y,Z)
+    points3d(X,Y,Z, scale_factor=0.2)
+    
+if __name__ == "__main__":
+    pass
+    #populateDB()
+
+    # show()
+
