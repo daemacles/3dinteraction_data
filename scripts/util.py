@@ -11,6 +11,26 @@ cos = np.cos
 
 DBNAME = '3dinteraction.sqlite3'
 
+from UserDict import DictMixin
+class Scene(DictMixin):
+    def __init__ (self, record):
+        fields = ('id', 'subject', 'input', 'output', 'startTime', 'endTime',
+                  'duration', 'numInputs', 'startPos', 'endPos', 'inputs')
+        scene = dict(zip(fields, record))
+        scene['startPos'] = np.frombuffer(scene['startPos'], dtype=np.float64)
+        scene['endPos'] = np.frombuffer(scene['endPos'], dtype=np.float64)
+        scene['inputs'] = np.frombuffer(scene['inputs'], dtype=np.float32).reshape(scene['numInputs'], 9)
+        self.__dict__.update(scene)
+
+    def __getitem__ (self, key):
+        return self.__dict__[key]
+
+    def __setitem__ (self, key, value):
+        self.__dict__[key] = value
+
+    def __delitem__ (self, key):
+        return self.__dict__.pop(key)
+
 def RotM_to_AA (R):
     # http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToAngle/
     theta = arccos((R.trace()-1) / 2)                          # rotation angle
@@ -139,13 +159,7 @@ def populateDB(directory = '.', reset=True):
     return
 
 def sceneFromRecord (record):
-    fields = ('id', 'subject', 'input', 'output', 'startTime', 'endTime',
-              'duration', 'numInputs', 'startPos', 'endPos', 'inputs')
-    scene = dict(zip(fields, record))
-    scene['startPos'] = np.frombuffer(scene['startPos'], dtype=np.float32)
-    scene['endPos'] = np.frombuffer(scene['endPos'], dtype=np.float32)
-    scene['inputs'] = np.frombuffer(scene['inputs'], dtype=np.float32).reshape(scene['numInputs'], 9)
-    return scene
+    return Scene(record)
 
 def getScenes (criteria = None):
     db = openDB()
