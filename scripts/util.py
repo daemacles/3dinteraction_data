@@ -170,7 +170,7 @@ def getScenes (criteria = None):
     db.close()
     return scenes
 
-def plotScene (scene, useColor=False, *args, **kwargs):
+def plotScene (scene, useColor=False, line_color=(1,1,1), point_color=(1,1,1), *args, **kwargs):
     i = scene['inputs']
     pos = i[:,1:4]
 
@@ -189,10 +189,10 @@ def plotScene (scene, useColor=False, *args, **kwargs):
         S = [1,0.5] * (len(X) / 2 + 1)
         if len(S) > len(X):
             S = S[:len(X)]
-        plot3d(X,Y,Z,S, *args, **kwargs)
+        plot3d(X,Y,Z,S, color=line_color, *args, **kwargs)
     else:
-        plot3d(X,Y,Z, *args, **kwargs)
-    points3d(X,Y,Z, scale_factor=0.1, resolution=4)
+        plot3d(X,Y,Z, color=line_color, *args, **kwargs)
+    points3d(X,Y,Z, color=point_color, scale_factor=0.1, resolution=4)
 
 def cylinderCompress(scene):
     '''
@@ -206,5 +206,30 @@ def cylinderCompress(scene):
         if p[2] != 0:
             sign = p[2] / np.abs(p[2])
         rotM = RotAA_to_M(-1 * sign * theta * i_axis)
+        P[idx] = rotM.dot(p)
+    
+def partialCylinderCompress(scene, angle_min, angle_max):
+    '''
+    rotates all points to lie between angles min and max
+    '''
+    P = scene['inputs'][:,1:4]
+    i_axis = np.array([1,0,0])
+    thetas = []
+    for idx in xrange(P.shape[0]):
+        p = P[idx]
+        theta = np.arccos(p[1] / np.sqrt(p[1]**2 + p[2]**2))
+        if p[2] != 0:
+            sign = p[2] / np.abs(p[2])
+        else:
+            sign = 1
+        thetas.append(-sign*theta)
+    min_theta = min(thetas)
+    max_theta = max(thetas)
+        
+
+    for idx in xrange(P.shape[0]):
+        p = P[idx]
+        target = thetas[idx] / (max_theta - min_theta) * (angle_max-angle_min) + angle_min
+        rotM = RotAA_to_M((thetas[idx] - target) * i_axis)
         P[idx] = rotM.dot(p)
     
